@@ -1,14 +1,14 @@
 package ru.netology.web;
 
+import com.codeborne.selenide.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selectors.byText;
@@ -16,26 +16,9 @@ import static com.codeborne.selenide.Selenide.*;
 import static java.time.Duration.ofSeconds;
 
 public class CardDeliveryPositiveTests {
-    public Calendar setDate(int days) {
-        Calendar date = new GregorianCalendar();
-        date.add(Calendar.DATE, days);
-        return date;
-    }
-
-    public String deliveryDate(Calendar setDate) {
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        return dateFormat.format(setDate.getTime());
-    }
-
-    public String getDateCalendar(String deliveryDate) {
-        int date = $$x("//td[@data-day]").size();
-        for(int i = 0; i<date; i++){
-            String text = $$x("//td[@data-day]").get(i).getText();
-            if(text.equalsIgnoreCase(deliveryDate)) {
-                $$x("//td[@data-day]").get(i).click();
-            }
-        }
-        return deliveryDate;
+    LocalDate defaultDay = LocalDate.now().plusDays(3);
+    public String setDate(long addDays, String pattern) {
+        return LocalDate.now().plusDays(addDays).format(DateTimeFormatter.ofPattern(pattern));
     }
 
     @BeforeEach
@@ -49,18 +32,24 @@ public class CardDeliveryPositiveTests {
         clearBrowserLocalStorage();
     }
 
-    //Тесты валидации поля Город (1-е задание) +тест дефолтной даты
+    //Тест появления попапа и соответствия выбранной даты
     @Test
-    void shouldShowSuccessfulBookingPopUpIfValidCity() {
+    void shouldShowSuccessfulBookingPopUpWithSelectedDate() {
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
+        String planningDate = setDate(5, "dd.MM.yyyy");
+        $x("//span[@data-test-id='date']//child::input").doubleClick().
+                sendKeys(Keys.BACK_SPACE);
+        $x("//span[@data-test-id='date']//child::input").setValue(planningDate);
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
         $x("//span[contains(text(), 'Забронировать')]").click();
-        $x("//div[@data-test-id='notification']").shouldBe(visible, ofSeconds(15));
-        $x("//div[@class ='notification__title']").shouldBe(text("Успешно"));
+        $(".notification__content")
+                .shouldHave(Condition.text("Встреча успешно забронирована на " + planningDate), Duration.ofSeconds(15))
+                .shouldBe(Condition.visible);
     }
 
+    //Тесты валидации поля Город (1-е задание) +тест дефолтной даты
     @Test
     void shouldShowSuccessfulBookingPopUpIfCityNameLowercase() {
         $x("//span[@data-test-id='city']//child::input").setValue("тюмень");
@@ -114,10 +103,10 @@ public class CardDeliveryPositiveTests {
     @Test
     void shouldShowSuccessfulBookingPopUpIfCustomDate() {
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
-        String inputDeliveryDate = deliveryDate(setDate(4));
+        String planningDate = setDate(4, "dd.MM.yyyy");
         $x("//span[@data-test-id='date']//child::input").doubleClick().
                 sendKeys(Keys.BACK_SPACE);
-        $x("//span[@data-test-id='date']//child::input").setValue(inputDeliveryDate);
+        $x("//span[@data-test-id='date']//child::input").setValue(planningDate);
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
@@ -129,10 +118,11 @@ public class CardDeliveryPositiveTests {
     //Тест поля Дата с выпадающим меню (Задание 2)
     @Test
     void shouldSelectDateFromCalendar() {
+        String deliveryDate = "22";
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
         $x("//span[@data-test-id='date']//child::input").click();
         $x("//div[@class = 'popup__container']").should(visible);
-        getDateCalendar("20");
+        $$x("//td[@data-day]").findBy(text(deliveryDate)).click();
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
@@ -142,28 +132,16 @@ public class CardDeliveryPositiveTests {
     }
 
     @Test
-    void shouldSelectDateFromCalendarSwitchArrowMonth() {
+    void shouldSelectDateFromCalendarNextMonth() {
+        LocalDate meetingDate = LocalDate.now().plusDays(30);
+        String deliveryDate = String.valueOf(meetingDate.getDayOfMonth());
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
         $x("//span[@data-test-id='date']//child::input").click();
         $x("//div[@class = 'popup__container']").should(visible);
-        $x("//div[@class='calendar__arrow calendar__arrow_direction_right']").click();
-        getDateCalendar("6");
-        $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
-        $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
-        $x("//label[@data-test-id='agreement']").click();
-        $x("//span[contains(text(), 'Забронировать')]").click();
-        $x("//div[@data-test-id='notification']").shouldBe(visible, ofSeconds(15));
-        $x("//div[@class ='notification__title']").shouldBe(text("Успешно"));
-    }
-
-    @Test
-    void shouldSelectDateFromCalendarSwitchArrowYear() {
-        $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
-        $x("//span[@data-test-id='date']//child::input").click();
-        $x("//div[@class = 'popup__container']").should(visible);
-        $x("//div[@class='calendar__arrow calendar__arrow_direction_right calendar__arrow_double']")
-                .click();
-        getDateCalendar("6");
+        if ((meetingDate.getMonthValue() > defaultDay.getMonthValue())) {
+            $(".calendar__arrow_direction_right[data-step='1']").click();
+        }
+        $$x("//td[@data-day]").findBy(text(deliveryDate)).click();
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();

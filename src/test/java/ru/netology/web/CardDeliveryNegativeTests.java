@@ -5,24 +5,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
 
 public class CardDeliveryNegativeTests {
-    public Calendar setDate(int days) {
-        Calendar date = new GregorianCalendar();
-        date.add(Calendar.DATE, days);
-        return date;
-    }
-
-    public String deliveryDate(Calendar setDate) {
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        return dateFormat.format(setDate.getTime());
+    public String setDate(long addDays, String pattern) {
+        return LocalDate.now().plusDays(addDays).format(DateTimeFormatter.ofPattern(pattern));
     }
 
     @BeforeEach
@@ -107,10 +98,10 @@ public class CardDeliveryNegativeTests {
     @Test
     void shouldShowErrorIfMeetingDayAfterTomorrow() {
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
-        String inputDeliveryDate = deliveryDate(setDate(2));
+        String planningDate = setDate(2, "dd.MM.yyyy");
         $x("//span[@data-test-id='date']//child::input").doubleClick().
                 sendKeys(Keys.BACK_SPACE);
-        $x("//span[@data-test-id='date']//child::input").setValue(inputDeliveryDate);
+        $x("//span[@data-test-id='date']//child::input").setValue(planningDate);
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
@@ -123,10 +114,10 @@ public class CardDeliveryNegativeTests {
     @Test
     void shouldShowErrorIfMeetingDateToday() {
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
-        String inputDeliveryDate = deliveryDate(setDate(0));
+        String planningDate = setDate(0, "dd.MM.yyyy");
         $x("//span[@data-test-id='date']//child::input").doubleClick().
                 sendKeys(Keys.BACK_SPACE);
-        $x("//span[@data-test-id='date']//child::input").setValue(inputDeliveryDate);
+        $x("//span[@data-test-id='date']//child::input").setValue(planningDate);
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
@@ -139,10 +130,10 @@ public class CardDeliveryNegativeTests {
     @Test
     void shouldShowErrorIfMeetingDateYesterday() {
         $x("//span[@data-test-id='city']//child::input").setValue("Тюмень");
-        String inputDeliveryDate = deliveryDate(setDate(-1));
+        String planningDate = setDate(-1, "dd.MM.yyyy");
         $x("//span[@data-test-id='date']//child::input").doubleClick().
                 sendKeys(Keys.BACK_SPACE);
-        $x("//span[@data-test-id='date']//child::input").setValue(inputDeliveryDate);
+        $x("//span[@data-test-id='date']//child::input").setValue(planningDate);
         $x("//span[@data-test-id='name']//child::input").setValue("Никита Пупкин");
         $x("//span[@data-test-id='phone']//child::input").setValue("+79057048510");
         $x("//label[@data-test-id='agreement']").click();
